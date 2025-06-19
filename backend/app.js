@@ -17,38 +17,37 @@ if (!process.env.MONGODB_URI) {
     process.exit(1); // stop the server if MongoDB URI is missing
 }
 
-// ✅ Log for debugging only (REMOVE after testing)
-console.log("📦 MongoDB URI loaded:", process.env.MONGODB_URI);
 
-// ✅ Connect to MongoDB Atlas
+
+//  Connect to MongoDB Atlas
 mongoose.connect(process.env.MONGODB_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
 }).then(() => {
-    console.log("✅ Connected to MongoDB Atlas");
+    console.log("Connected to MongoDB Atlas");
 }).catch(err => {
-    console.error("❌ MongoDB connection error:", err);
+    console.error(" MongoDB connection error:", err);
     process.exit(1); // optional: stop if connection fails
 });
 
-// ✅ Initialize Express app
+//  Initialize Express app
 const app = express();
 
-// ✅ Middleware
+//  Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(methodOverride('_method'));
 
-// ✅ View engine setup
+//  View engine setup
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// ✅ Session and flash setup
+//  Session and flash setup
 app.use(session(sessionConfig));
 app.use(flash());
 
-// ✅ Global variable middleware for templates
+//  Global variable middleware for templates
 app.use((req, res, next) => {
     res.locals.user = req.session.user || null;
     res.locals.messages = {
@@ -63,26 +62,26 @@ app.use((req, res, next) => {
     next();
 });
 
-// ✅ Routes
+//  Routes
 app.use('/auth', require('./routes/authRoutes'));
 app.use('/courses', require('./routes/courseRoutes'));
 app.use('/users', require('./routes/userRoutes'));
 
-// ✅ Home Route
+//  Home Route
 app.get('/', (req, res) => {
     res.redirect('/courses');
 });
 
-// ✅ Error Handling Middleware
+// Error Handling Middleware
 app.use((err, req, res, next) => {
-    console.error("❌ Global Error Handler:", err.stack);
+    console.error(" Global Error Handler:", err.stack);
     res.status(500).render('error', {
         message: 'Something went wrong!',
         error: process.env.NODE_ENV === 'development' ? err : {}
     });
 });
 
-// ✅ 404 Handler
+//  404 Handler
 app.use((req, res) => {
     res.status(404).render('error', {
         message: 'Page not found',
@@ -90,7 +89,7 @@ app.use((req, res) => {
     });
 });
 
-// ✅ Start Server
+// Start Server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`🚀 Server is running on port ${PORT}`);
