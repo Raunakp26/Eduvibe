@@ -6,7 +6,7 @@ const sessionConfig = {
     resave: false,
     saveUninitialized: false,
     store: MongoStore.create({
-        mongoUrl: 'mongodb://127.0.0.1:27017/udemy-clone',
+        mongoUrl:process.env.MONGODB_URI ,
         ttl: 24 * 60 * 60, // 1 day
         autoRemove: 'native',
         touchAfter: 24 * 3600 // 24 hours
