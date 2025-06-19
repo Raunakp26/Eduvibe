@@ -1,0 +1,136 @@
+<!-- Professional Course Detail Card -->
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-lg border-0 rounded-4">
+                <!-- Removed Card Header with Gradient and Stats Row -->
+                <div class="card-body p-4">
+                    <!-- Removed Stats Row and Card Header -->
+                    <!-- Description -->
+                    <div class="mb-4">
+                        <h2 class="fw-bold mb-2 text-primary"><%= course.title %></h2>
+                        <h5 class="fw-bold mb-2 text-primary"><i class="fas fa-info-circle me-2"></i>Description</h5>
+                        <p class="mb-0"><%= course.description %></p>
+                    </div>
+                    <!-- Course Content -->
+                    <div class="mb-4">
+                        <h5 class="fw-bold mb-2 text-primary"><i class="fas fa-play-circle me-2"></i>Course Content</h5>
+                        <% if (canViewContent) { %>
+                            <% if (course.videoURL) { %>
+                                <div class="ratio ratio-16x9 mb-3 rounded-3 overflow-hidden border border-2 border-primary">
+                                    <video controls class="w-100" title="Course video for <%= course.title %>">
+                                        <source src="<%= course.videoURL %>" type="video/mp4">
+                                        Your browser does not support the video tag.
+                                    </video>
+                                </div>
+                            <% } else { %>
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>No video content available.
+                                </div>
+                            <% } %>
+                        <% } else { %>
+                            <!-- Removed alert-info block for course content preview -->
+                        <% } %>
+                    </div>
+                    <!-- Enrollment Section -->
+                    <% if (locals.user && user.role === 'student') { %>
+                        <!-- Removed alert-success and enrollment-form blocks for enrolled students -->
+                    <% } else if (!locals.user) { %>
+                        <!-- Removed alert-info block for login to enroll -->
+                    <% } %>
+                </div>
+            </div>
+            <% if (locals.user && user.role === 'instructor' && course.createdBy && course.createdBy._id.toString() === user._id.toString()) { %>
+                <div class="text-center mt-5 mb-5">
+                    <a href="/courses/<%= course._id %>/edit" class="btn btn-primary btn-lg px-5 py-2 rounded-pill fw-bold shadow">
+                        <i class="fas fa-edit me-2"></i>Edit Course
+                    </a>
+                </div>
+            <% } %>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border: none;
+        border-radius: 1rem;
+    }
+    .card-header {
+        border-radius: 1rem 1rem 0 0 !important;
+        border-bottom: none;
+        padding-top: 1.5rem;
+        padding-bottom: 1.5rem;
+    }
+    .btn {
+        padding: 0.5rem 1.5rem;
+        font-size: 1rem;
+        border-radius: 2rem;
+        transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+    }
+    .btn-primary {
+        background: linear-gradient(90deg, #4f8cff 0%, #6a82fb 100%);
+        border: none;
+        color: #fff;
+        font-weight: 600;
+    }
+    .btn-primary:hover {
+        background: linear-gradient(90deg, #3a6fd8 0%, #4f8cff 100%);
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(79,140,255,0.15);
+    }
+    .btn-light {
+        background: #fff;
+        border: none;
+        color: #4f8cff;
+    }
+    .btn-light:hover {
+        background: #e9f2ff;
+        color: #3a6fd8;
+    }
+    .badge {
+        font-size: 0.95em;
+        padding: 0.5em 0.9em;
+        border-radius: 1rem;
+        margin-right: 0.25em;
+    }
+    .enrollment-form {
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 0.75rem;
+        border: 1px solid #e3e6f0;
+    }
+    .ratio {
+        border-radius: 0.75rem;
+        overflow: hidden;
+    }
+    .alert-info {
+        background: #e9f2ff;
+        color: #2c5282;
+        border: none;
+    }
+    .alert-success {
+        background: #e6ffed;
+        color: #276749;
+        border: none;
+    }
+    .shadow-lg {
+        box-shadow: 0 4px 32px rgba(79,140,255,0.10) !important;
+    }
+    @media (max-width: 767.98px) {
+        .card-header {
+            text-align: center;
+        }
+        .card-header .d-flex {
+            flex-direction: column !important;
+            align-items: center !important;
+        }
+        .card-header .btn {
+            width: 100%;
+            text-align: center;
+        }
+        .text-center.mt-4 .btn {
+            width: 100%;
+        }
+    }
+</style> 

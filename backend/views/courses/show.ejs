@@ -1,0 +1,62 @@
+<%- include('../partials/header') %>
+
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <img src="<%= course.thumbnail %>" class="card-img-top" alt="<%= course.title %>">
+                <div class="card-body">
+                    <h1 class="card-title"><%= course.title %></h1>
+                    <p class="card-text"><%= course.description %></p>
+                    
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h3 class="mb-0">$<%= course.price %></h3>
+                        <% if (locals.user && user.role === 'student') { %>
+                            <% if (course.studentsEnrolled.includes(user._id)) { %>
+                                <span class="badge bg-success">Enrolled</span>
+                            <% } else { %>
+                                <form action="/courses/<%= course._id %>/enroll" method="POST" class="d-inline">
+                                    <button type="submit" class="btn btn-primary">Enroll Now</button>
+                                </form>
+                            <% } %>
+                        <% } %>
+                    </div>
+
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">Course Details</h5>
+                            <ul class="list-unstyled">
+                                <li><strong>Instructor:</strong> <%= course.createdBy.name %></li>
+                                <li><strong>Students Enrolled:</strong> <%= course.studentsEnrolled.length %></li>
+                                <li><strong>Created:</strong> <%= new Date(course.createdAt).toLocaleDateString() %></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <% if (locals.user && (user.role === 'instructor' && course.createdBy._id.toString() === user._id.toString())) { %>
+                        <div class="d-flex gap-2">
+                            <a href="/courses/<%= course._id %>/edit" class="btn btn-warning">Edit Course</a>
+                            <form action="/courses/<%= course._id %>?_method=DELETE" method="POST" class="d-inline">
+                                <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this course?')">Delete Course</button>
+                            </form>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Course Content</h5>
+                    <div class="ratio ratio-16x9 mb-3">
+                        <iframe src="<%= course.videoURL %>" allowfullscreen></iframe>
+                    </div>
+                    <p class="card-text">Watch the course preview video to learn more about what you'll learn in this course.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %> 

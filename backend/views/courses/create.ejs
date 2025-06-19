@@ -1,0 +1,65 @@
+<%- include('../partials/header') %>
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h1 class="card-title mb-4">Create New Course</h1>
+                    
+                    <form action="/courses" method="POST" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Course Title</label>
+                            <input type="text" class="form-control" id="title" name="title" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="4" required></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="price" class="form-label">Price ($)</label>
+                            <input type="number" class="form-control" id="price" name="price" min="0" step="0.01" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="thumbnail" class="form-label">Course Thumbnail</label>
+                            <input type="file" class="form-control" id="thumbnail" name="thumbnail" accept="image/*" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="video" class="form-label">Course Video</label>
+                            <input type="file" class="form-control" id="video" name="video" accept="video/*" required>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">Create Course</button>
+                            <a href="/courses" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // File size validation
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const thumbnail = document.getElementById('thumbnail').files[0];
+        const video = document.getElementById('video').files[0];
+        
+        if (thumbnail && thumbnail.size > 2 * 1024 * 1024) {
+            e.preventDefault();
+            alert('Thumbnail size should be less than 2MB');
+        }
+        
+        if (video && video.size > 500 * 1024 * 1024) {
+            e.preventDefault();
+            alert('Video size should be less than 500MB');
+        }
+    });
+</script>
+
+<%- include('../partials/footer') %> 

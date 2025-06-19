@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "method-override": "^3.0.0",
+    "multer-storage-cloudinary": "^4.0.0"
+  }
+}

@@ -1,0 +1,75 @@
+<%- include('../partials/header') %>
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="text-center mb-0">Create Your Account</h3>
+                </div>
+                <div class="card-body">
+                    <form action="/auth/register" method="POST" class="needs-validation" novalidate>
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Full Name</label>
+                            <input type="text" class="form-control" id="name" name="name" required 
+                                placeholder="Enter your full name">
+                            <div class="invalid-feedback">
+                                Please enter your full name.
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email address</label>
+                            <input type="email" class="form-control" id="email" name="email" required
+                                placeholder="Enter your email">
+                            <div class="invalid-feedback">
+                                Please enter a valid email address.
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="password" name="password" required
+                                placeholder="Create a password">
+                            <div class="invalid-feedback">
+                                Please enter a password.
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label for="role" class="form-label">I want to</label>
+                            <select class="form-select" id="role" name="role" required>
+                                <option value="">Select your role</option>
+                                <option value="student">Learn - I want to take courses</option>
+                                <option value="instructor">Teach - I want to create courses</option>
+                            </select>
+                            <div class="invalid-feedback">
+                                Please select your role.
+                            </div>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">Create Account</button>
+                            <a href="/auth/login" class="btn btn-outline-secondary">Already have an account? Login</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Form validation
+(function () {
+    'use strict'
+    const forms = document.querySelectorAll('.needs-validation')
+    Array.from(forms).forEach(form => {
+        form.addEventListener('submit', event => {
+            if (!form.checkValidity()) {
+                event.preventDefault()
+                event.stopPropagation()
+            }
+            form.classList.add('was-validated')
+        }, false)
+    })
+})()
+</script>
+
+<%- include('../partials/footer') %> 
