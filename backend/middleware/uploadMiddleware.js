@@ -2,10 +2,11 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const Course = require('../models/Course');
+const cloudinary = require('../utils/cloudinary');
 
-// Create upload directories if they don't exist
+// Create temp upload dirs just in case (used before Cloudinary upload)
 const createUploadDirs = () => {
-    const dirs = ['public/uploads/thumbnails', 'public/uploads/videos'];
+    const dirs = ['uploads/temp'];
     dirs.forEach(dir => {
         if (!fs.existsSync(dir)) {
             fs.mkdirSync(dir, { recursive: true });
@@ -15,127 +16,80 @@ const createUploadDirs = () => {
 
 createUploadDirs();
 
-// Configure storage for all files
+// Multer diskStorage just to hold files temporarily before Cloudinary upload
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        const uploadPath = file.fieldname === 'thumbnail' 
-            ? 'public/uploads/thumbnails'
-            : 'public/uploads/videos';
-        cb(null, uploadPath);
+        cb(null, 'uploads/temp');
     },
     filename: function (req, file, cb) {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
         cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
     }
 });
 
-// File filter
 const fileFilter = (req, file, cb) => {
     if (file.fieldname === 'thumbnail') {
-        if (file.mimetype.startsWith('image/')) {
-            cb(null, true);
-        } else {
-            cb(new Error('Please upload an image file for thumbnail'), false);
-        }
+        file.mimetype.startsWith('image/') ? cb(null, true) : cb(new Error('Thumbnail must be an image'), false);
     } else if (file.fieldname === 'video') {
-        if (file.mimetype.startsWith('video/')) {
-            cb(null, true);
-        } else {
-            cb(new Error('Please upload a video file'), false);
-        }
+        file.mimetype.startsWith('video/') ? cb(null, true) : cb(new Error('Video must be a video file'), false);
     } else {
         cb(new Error('Invalid field name'), false);
     }
 };
 
-// Create multer upload instance
-const upload = multer({
-    storage: storage,
-    fileFilter: fileFilter,
-    limits: {
-        fileSize: function (req, file, cb) {
-            if (file.fieldname === 'thumbnail') {
-                cb(null, 2 * 1024 * 1024); // 2MB for thumbnails
-            } else {
-                cb(null, 500 * 1024 * 1024); // 500MB for videos
-            }
-        }
-    }
-});
+const upload = multer({ storage, fileFilter });
 
-// Middleware for handling file uploads
 const handleFileUpload = upload.fields([
     { name: 'thumbnail', maxCount: 1 },
     { name: 'video', maxCount: 1 }
 ]);
 
-// Middleware to process upload results
-const processUpload = (req, res, next) => {
+const processUpload = async (req, res, next) => {
     try {
-        // For course creation
-        if (req.path === '/') {
-            if (!req.files) {
-                req.flash('error', 'Please upload both thumbnail and video');
-                return res.redirect('/courses/create');
-            }
-
-            const { thumbnail, video } = req.files;
-
-            if (!thumbnail || !video) {
-                req.flash('error', 'Please upload both thumbnail and video');
-                return res.redirect('/courses/create');
-            }
-
-            // Add file URLs to request body
-            req.body.thumbnail = `/uploads/thumbnails/${thumbnail[0].filename}`;
-            req.body.video = `/uploads/videos/${video[0].filename}`;
+        if (!req.files || (!req.files.thumbnail && !req.files.video)) {
+            req.flash('error', 'Please upload both thumbnail and video');
+            return res.redirect(req.path === '/' ? '/courses/create' : `/courses/${req.params.id}/edit`);
         }
-        // For course update
-        else if (req.files) {
-            const { thumbnail, video } = req.files;
 
-            if (thumbnail) {
-                req.body.thumbnail = `/uploads/thumbnails/${thumbnail[0].filename}`;
-            }
-            if (video) {
-                req.body.video = `/uploads/videos/${video[0].filename}`;
-            }
+        const { thumbnail, video } = req.files;
+
+        if (thumbnail && thumbnail[0]) {
+            const result = await cloudinary.uploader.upload(thumbnail[0].path, {
+                folder: 'thumbnails',
+            });
+            fs.unlinkSync(thumbnail[0].path);
+            req.body.thumbnail = result.secure_url;
+        }
+
+        if (video && video[0]) {
+            const result = await cloudinary.uploader.upload(video[0].path, {
+                folder: 'videos',
+                resource_type: 'video',
+            });
+            fs.unlinkSync(video[0].path);
+            req.body.video = result.secure_url;
         }
 
         next();
     } catch (error) {
-        req.flash('error', error.message || 'Error processing file upload');
+        console.error('Cloudinary Upload Error:', error);
+        req.flash('error', 'Error uploading to Cloudinary');
         res.redirect(req.path === '/' ? '/courses/create' : `/courses/${req.params.id}/edit`);
     }
 };
 
-// Middleware to handle file deletion
 const handleFileDeletion = async (req, res, next) => {
     try {
         const course = await Course.findById(req.params.id);
-        if (!course) {
-            return next();
-        }
+        if (!course) return next();
 
-        // Delete old thumbnail if new one is uploaded
-        if (req.body.thumbnail && course.thumbnail) {
-            const thumbnailPath = path.join(__dirname, '..', 'public', course.thumbnail);
-            if (fs.existsSync(thumbnailPath)) {
-                fs.unlinkSync(thumbnailPath);
-            }
-        }
-
-        // Delete old video if new one is uploaded
-        if (req.body.video && course.videoURL) {
-            const videoPath = path.join(__dirname, '..', 'public', course.videoURL);
-            if (fs.existsSync(videoPath)) {
-                fs.unlinkSync(videoPath);
-            }
-        }
+        // Since files are on Cloudinary, no need to delete from local
+        // You can add Cloudinary delete logic here if needed in future
 
         next();
     } catch (error) {
-        req.flash('error', 'Error deleting old files');
+        console.error('Deletion error:', error);
+        req.flash('error', 'Error deleting files');
         res.redirect('/courses');
     }
 };
@@ -144,4 +98,4 @@ module.exports = {
     handleFileUpload,
     processUpload,
     handleFileDeletion
-}; 
+};
