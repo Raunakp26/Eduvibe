@@ -206,11 +206,12 @@ router.put('/:id',
 
             // Update course with new file URLs if provided
             if (req.body.thumbnail) {
-                course.thumbnail = req.body.thumbnail;
-            }
-            if (req.body.video) {
-                course.videoURL = req.body.video;
-            }
+      course.thumbnail = req.body.thumbnail;
+           }
+    if (req.body.videoURL) {
+    course.videoURL = req.body.videoURL; 
+      }
+
 
             // Update other fields
             Object.keys(req.body).forEach(key => {
