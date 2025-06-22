@@ -4,28 +4,24 @@ const Course = require('../models/Course');
 const User = require('../models/User');
 const { protect } = require('../middleware/authMiddleware');
 const { isInstructor, isCourseCreator } = require('../middleware/roleMiddleware');
-const { 
-    handleFileUpload, 
-    processUpload, 
-    handleFileDeletion 
+const {
+    handleFileUpload,
+    processUpload,
+    handleFileDeletion
 } = require('../middleware/uploadMiddleware');
 
-// @desc    Get all courses
-// @route   GET /courses
-// @access  Public
+// Get all courses
 router.get('/', async (req, res) => {
     try {
         const search = req.query.search || '';
         const query = search ? { title: { $regex: search, $options: 'i' } } : {};
-        
+
         const courses = await Course.find(query)
             .populate('createdBy', 'name email')
             .populate('studentsEnrolled', 'name email')
-            .sort({ createdAt: -1 }); // Sort by newest first
+            .sort({ createdAt: -1 });
 
-        console.log('CourseRoutes (GET /) - User passed to EJS:', req.session.user ? req.session.user.name : 'No user', 'Role:', req.session.user ? req.session.user.role : 'N/A');
-
-        res.render('courses/index', { 
+        res.render('courses/index', {
             courses,
             search,
             title: 'All Courses',
@@ -33,97 +29,66 @@ router.get('/', async (req, res) => {
         });
     } catch (error) {
         console.error('Error fetching courses:', error);
-        req.flash('error', 'Failed to load courses: ' + error.message);
-        
-        res.status(500).render('error', {
-            message: 'An error occurred while loading courses.',
-            error: process.env.NODE_ENV === 'development' ? error : {}
-        });
+        req.flash('error', 'Failed to load courses.');
+        res.status(500).render('error', { message: 'Failed to load courses.', error });
     }
 });
 
-// @desc    Show create course form
-// @route   GET /courses/create
-// @access  Private/Instructor
+// Show create form
 router.get('/create', protect, isInstructor, (req, res) => {
-    res.render('courses/create', { 
+    res.render('courses/create', {
         title: 'Create Course',
         user: req.user
     });
 });
 
-// @desc    Create a new course
-// @route   POST /courses
-// @access  Private/Instructor
-router.post('/', 
-    protect, 
-    isInstructor, 
-    handleFileUpload,
-    processUpload,
-    async (req, res) => {
-        try {
-            const { title, description, price, thumbnail, video } = req.body;
-            
-            const course = await Course.create({
-                title,
-                description,
-                thumbnail,
-                videoURL: video,
-                price,
-                createdBy: req.user._id,
-                instructor: req.user._id
-            });
-
-            req.flash('success', 'Course created successfully');
-            res.redirect(`/courses/${course._id}`);
-        } catch (error) {
-            req.flash('error', error.message);
-            res.redirect('/courses/create');
-        }
-    }
-);
-
-// @desc    Enroll in a course
-// @route   POST /courses/:courseId/enroll
-// @access  Private/Student
-router.post('/:courseId/enroll', protect, async (req, res) => {
+// Create a course
+router.post('/', protect, isInstructor, handleFileUpload, processUpload, async (req, res) => {
     try {
-        console.log('Enrollment Debug - User:', {
-            id: req.user._id,
-            name: req.user.name,
-            role: req.user.role
+        const { title, description, price, thumbnail, video } = req.body;
+
+        const course = await Course.create({
+            title,
+            description,
+            thumbnail,
+            videoURL: video,
+            price,
+            createdBy: req.user._id,
+            instructor: req.user._id
         });
 
-        // Check if user is a student
+        req.flash('success', 'Course created successfully');
+        res.redirect(`/courses/${course._id}`);
+    } catch (error) {
+        req.flash('error', error.message);
+        res.redirect('/courses/create');
+    }
+});
+
+// Enroll in course
+router.post('/:courseId/enroll', protect, async (req, res) => {
+    try {
         if (req.user.role !== 'student') {
-            req.flash('error', 'Only students can enroll in courses');
+            req.flash('error', 'Only students can enroll');
             return res.redirect('/courses');
         }
 
         const course = await Course.findById(req.params.courseId);
-        
         if (!course) {
             req.flash('error', 'Course not found');
             return res.redirect('/courses');
         }
 
-        // Check if student is already enrolled
         if (course.studentsEnrolled.includes(req.user._id)) {
-            req.flash('error', 'You are already enrolled in this course');
+            req.flash('error', 'Already enrolled');
             return res.redirect(`/courses/${course._id}`);
         }
 
-        // Add student to course's enrolled students
         course.studentsEnrolled.push(req.user._id);
         await course.save();
 
-        // Add course to student's enrolled courses
-        await User.findByIdAndUpdate(
-            req.user._id,
-            { $push: { enrolledCourses: course._id } }
-        );
+        await User.findByIdAndUpdate(req.user._id, { $push: { enrolledCourses: course._id } });
 
-        // Update session with fresh user data
         const updatedUser = await User.findById(req.user._id);
         req.session.user = {
             _id: updatedUser._id,
@@ -132,33 +97,17 @@ router.post('/:courseId/enroll', protect, async (req, res) => {
             role: updatedUser.role
         };
 
-        // Save session explicitly
-        req.session.save((err) => {
-            if (err) {
-                console.error('Session Save Error:', err);
-                req.flash('error', 'Enrollment successful but session update failed');
-                return res.redirect(`/courses/${course._id}`);
-            }
-            
-            console.log('Enrollment Debug - Session updated:', {
-                id: req.session.user._id,
-                name: req.session.user.name,
-                role: req.session.user.role
-            });
-            
-            req.flash('success', 'Successfully enrolled in course');
+        req.session.save(() => {
+            req.flash('success', 'Enrolled successfully');
             res.redirect(`/courses/${course._id}`);
         });
     } catch (error) {
-        console.error('Enrollment Error:', error);
         req.flash('error', error.message);
         res.redirect('/courses');
     }
 });
 
-// @desc    Show edit course form
-// @route   GET /courses/:id/edit
-// @access  Private/Instructor
+// Edit form
 router.get('/:id/edit', protect, isCourseCreator, async (req, res) => {
     try {
         const course = await Course.findById(req.params.id);
@@ -167,15 +116,7 @@ router.get('/:id/edit', protect, isCourseCreator, async (req, res) => {
             return res.redirect('/courses');
         }
 
-        // Check if user is the instructor
-        if (course.createdBy.toString() !== req.user._id.toString()) {
-            return res.status(403).render('error', { 
-                message: 'Not authorized',
-                error: { status: 403 }
-            });
-        }
-
-        res.render('courses/edit', { 
+        res.render('courses/edit', {
             course,
             title: `Edit ${course.title}`,
             user: req.user
@@ -186,64 +127,49 @@ router.get('/:id/edit', protect, isCourseCreator, async (req, res) => {
     }
 });
 
-// @desc    Update course
-// @route   PUT /courses/:id
-// @access  Private/Instructor
-router.put('/:id',
-    protect,
-    isCourseCreator,
-    handleFileUpload,
-    processUpload,
-    handleFileDeletion,
-    async (req, res) => {
-        try {
-            const course = await Course.findById(req.params.id);
-            
-            if (!course) {
-                req.flash('error', 'Course not found');
-                return res.redirect('/courses');
-            }
-
-            // Update course with new file URLs if provided
-            if (req.body.thumbnail) {
-      course.thumbnail = req.body.thumbnail;
-           }
-    if (req.body.videoURL) {
-    course.videoURL = req.body.videoURL; 
-      }
-
-
-            // Update other fields
-            Object.keys(req.body).forEach(key => {
-                if (key !== 'thumbnail' && key !== 'video') {
-                    course[key] = req.body[key];
-                }
-            });
-
-            await course.save();
-            req.flash('success', 'Course updated successfully');
-            res.redirect(`/courses/${course._id}`);
-        } catch (error) {
-            req.flash('error', error.message);
-            res.redirect(`/courses/${req.params.id}/edit`);
+// Update course
+router.put('/:id', protect, isCourseCreator, handleFileUpload, processUpload, handleFileDeletion, async (req, res) => {
+    try {
+        const course = await Course.findById(req.params.id);
+        if (!course) {
+            req.flash('error', 'Course not found');
+            return res.redirect('/courses');
         }
-    }
-);
 
-// @desc    Delete course
-// @route   DELETE /courses/:id
-// @access  Private/Instructor
+        const fieldsToUpdate = ['title', 'description', 'price', 'duration', 'level'];
+        fieldsToUpdate.forEach(field => {
+            if (req.body[field] !== undefined) {
+                course[field] = req.body[field];
+            }
+        });
+
+        if (req.body.thumbnail) {
+            course.thumbnail = req.body.thumbnail;
+        }
+        if (req.body.videoURL) {
+            course.videoURL = req.body.videoURL;
+        }
+
+        await course.save();
+        req.flash('success', 'Course updated successfully');
+        res.redirect(`/courses/${course._id}`);
+    } catch (error) {
+        req.flash('error', error.message);
+        res.redirect(`/courses/${req.params.id}/edit`);
+    }
+});
+
+// Delete course
 router.delete('/:id', protect, isInstructor, async (req, res) => {
     try {
         const course = await Course.findById(req.params.id);
-        
         if (!course) {
             req.flash('error', 'Course not found');
             return res.redirect('/courses');
         }
 
         await course.deleteOne();
-        req.flash('success', 'Course deleted successfully');
+        req.flash('success', 'Course deleted');
         res.redirect('/courses');
     } catch (error) {
         req.flash('error', error.message);
@@ -251,9 +177,7 @@ router.delete('/:id', protect, isInstructor, async (req, res) => {
     }
 });
 
-// @desc    Get single course
-// @route   GET /courses/:id
-// @access  Public
+// View course details
 router.get('/:id', async (req, res) => {
     try {
         const course = await Course.findById(req.params.id)
@@ -265,43 +189,31 @@ router.get('/:id', async (req, res) => {
             return res.redirect('/courses');
         }
 
-        // Initialize variables regardless of login status
         let isEnrolled = false;
         let canViewContent = false;
-
-        // Get user from session
         const user = req.session.user;
 
         if (user) {
-            // Check if the user is the creator (instructor)
             if (course.createdBy._id.toString() === user._id.toString()) {
-                canViewContent = true; // Creator can always view
+                canViewContent = true;
             }
-            
-            // Check if the user is a student and is enrolled
             if (user.role === 'student' && course.studentsEnrolled.some(student => student._id.toString() === user._id.toString())) {
                 isEnrolled = true;
-                canViewContent = true; // Enrolled student can view
+                canViewContent = true;
             }
         }
 
-        // Render the detail page, passing enrollment status and content view permission
         res.render('courses/detail', {
             course,
             title: course.title,
-            user: user,
-            isEnrolled: isEnrolled,
-            canViewContent: canViewContent
+            user,
+            isEnrolled,
+            canViewContent
         });
-
     } catch (error) {
-        console.error('Error fetching course detail:', error);
         req.flash('error', error.message);
-        res.status(500).render('error', {
-            message: 'An error occurred while loading course details.',
-            error: process.env.NODE_ENV === 'development' ? error : {}
-        });
+        res.status(500).render('error', { message: 'Failed to load course.', error });
     }
 });
 
-module.exports = router; 
+module.exports = router;
