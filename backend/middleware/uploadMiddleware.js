@@ -1,10 +1,9 @@
+// Final working upload middleware using Cloudinary
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const Course = require('../models/Course');
 const cloudinary = require('../utils/cloudinary');
 
-// Create temp upload dirs just in case (used before Cloudinary upload)
 const createUploadDirs = () => {
     const dirs = ['uploads/temp'];
     dirs.forEach(dir => {
@@ -13,10 +12,8 @@ const createUploadDirs = () => {
         }
     });
 };
-
 createUploadDirs();
 
-// Multer diskStorage just to hold files temporarily before Cloudinary upload
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         cb(null, 'uploads/temp');
@@ -43,7 +40,6 @@ const handleFileUpload = upload.fields([
     { name: 'thumbnail', maxCount: 1 },
     { name: 'video', maxCount: 1 }
 ]);
-
 
 const processUpload = async (req, res, next) => {
     try {
@@ -74,17 +70,10 @@ const processUpload = async (req, res, next) => {
     }
 };
 
-
-       
-
 const handleFileDeletion = async (req, res, next) => {
     try {
         const course = await Course.findById(req.params.id);
         if (!course) return next();
-
-        // Since files are on Cloudinary, no need to delete from local
-        // You can add Cloudinary delete logic here if needed in future
-
         next();
     } catch (error) {
         console.error('Deletion error:', error);
