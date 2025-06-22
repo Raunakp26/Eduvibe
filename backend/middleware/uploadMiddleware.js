@@ -67,7 +67,7 @@ const processUpload = async (req, res, next) => {
                 resource_type: 'video',
             });
             fs.unlinkSync(video[0].path);
-            req.body.video = result.secure_url;
+              req.body.videoURL = result.secure_url;
         }
 
         next();
