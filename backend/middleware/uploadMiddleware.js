@@ -44,14 +44,10 @@ const handleFileUpload = upload.fields([
     { name: 'video', maxCount: 1 }
 ]);
 
+
 const processUpload = async (req, res, next) => {
     try {
-        if (!req.files || (!req.files.thumbnail && !req.files.video)) {
-            req.flash('error', 'Please upload both thumbnail and video');
-            return res.redirect(req.path === '/' ? '/courses/create' : `/courses/${req.params.id}/edit`);
-        }
-
-        const { thumbnail, video } = req.files;
+        const { thumbnail, video } = req.files || {};
 
         if (thumbnail && thumbnail[0]) {
             const result = await cloudinary.uploader.upload(thumbnail[0].path, {
@@ -67,16 +63,19 @@ const processUpload = async (req, res, next) => {
                 resource_type: 'video',
             });
             fs.unlinkSync(video[0].path);
-              req.body.videoURL = result.secure_url;
+            req.body.videoURL = result.secure_url;
         }
 
         next();
     } catch (error) {
         console.error('Cloudinary Upload Error:', error);
         req.flash('error', 'Error uploading to Cloudinary');
-        res.redirect(req.path === '/' ? '/courses/create' : `/courses/${req.params.id}/edit`);
+        res.redirect(req.originalUrl);
     }
 };
+
+
+       
 
 const handleFileDeletion = async (req, res, next) => {
     try {
