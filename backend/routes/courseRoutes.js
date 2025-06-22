@@ -45,13 +45,14 @@ router.get('/create', protect, isInstructor, (req, res) => {
 // Create a course
 router.post('/', protect, isInstructor, handleFileUpload, processUpload, async (req, res) => {
     try {
-        const { title, description, price, thumbnail, video } = req.body;
+        const { title, description, price, thumbnail, videoURL } = req.body;
+
 
         const course = await Course.create({
             title,
             description,
             thumbnail,
-            videoURL: video,
+            videoURL,
             price,
             createdBy: req.user._id,
             instructor: req.user._id
@@ -147,7 +148,7 @@ router.put('/:id', protect, isCourseCreator, handleFileUpload, processUpload, ha
             course.thumbnail = req.body.thumbnail;
         }
         if (req.body.video) {  
-            course.videoURL = req.body.video;
+            course.videoURL = req.body.videoURL;
         }
 
         await course.save();
