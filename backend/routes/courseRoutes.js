@@ -146,8 +146,8 @@ router.put('/:id', protect, isCourseCreator, handleFileUpload, processUpload, ha
         if (req.body.thumbnail) {
             course.thumbnail = req.body.thumbnail;
         }
-        if (req.body.videoURL) {
-            course.videoURL = req.body.videoURL;
+        if (req.body.video) {  
+            course.videoURL = req.body.video;
         }
 
         await course.save();
@@ -159,23 +159,6 @@ router.put('/:id', protect, isCourseCreator, handleFileUpload, processUpload, ha
     }
 });
 
-// Delete course
-router.delete('/:id', protect, isInstructor, async (req, res) => {
-    try {
-        const course = await Course.findById(req.params.id);
-        if (!course) {
-            req.flash('error', 'Course not found');
-            return res.redirect('/courses');
-        }
-
-        await course.deleteOne();
-        req.flash('success', 'Course deleted');
-        res.redirect('/courses');
-    } catch (error) {
-        req.flash('error', error.message);
-        res.redirect('/courses');
-    }
-});
 
 // View course details
 router.get('/:id', async (req, res) => {
