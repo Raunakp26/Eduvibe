@@ -88,6 +88,19 @@
                                 <% } %>
                             </div>
                         </div>
+ <!-- Hidden fields to keep previous media if no new file is uploaded -->
+<input type="hidden" name="existingThumbnail" value="<%= course.thumbnail %>">
+<input type="hidden" name="existingVideoURL" value="<%= course.videoURL %>">
+
+<!-- Action Buttons -->
+<div class="d-flex gap-2 mt-4">
+    <button type="submit" class="btn btn-primary btn-lg">
+        <i class="fas fa-save me-2"></i>Update Course
+    </button>
+    <a href="/courses/<%= course._id %>" class="btn btn-secondary btn-lg">
+        <i class="fas fa-times me-2"></i>Cancel
+    </a>
+</div>
 
                         <!-- Action Buttons -->
                         <div class="d-flex gap-2 mt-4">
