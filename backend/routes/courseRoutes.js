@@ -131,31 +131,52 @@ router.get('/:id/edit', protect, isCourseCreator, async (req, res) => {
 // Update course
 router.put('/:id', protect, isCourseCreator, handleFileUpload, processUpload, async (req, res) => {
     try {
+        console.log('📝 req.body:', req.body);           // ✅ Show form fields
+        console.log('📂 req.files:', req.files);         // ✅ Show uploaded files info
+
         const course = await Course.findById(req.params.id);
         if (!course) {
             req.flash('error', 'Course not found');
             return res.redirect('/courses');
         }
 
-        const fieldsToUpdate = ['title', 'description', 'price', 'duration', 'level'];
-        fieldsToUpdate.forEach(field => {
-            if (req.body[field] !== undefined) {
-                course[field] = req.body[field];
-            }
-        });
+        const { title, description, price, duration, level, existingThumbnail, existingVideoURL } = req.body;
 
-        // Retain old media if not replaced
-        course.thumbnail = req.body.thumbnail || req.body.existingThumbnail || course.thumbnail;
-        course.videoURL = req.body.videoURL || req.body.existingVideoURL || course.videoURL;
+        // Update text fields
+        course.title = title;
+        course.description = description;
+        course.price = price;
+        course.duration = duration;
+        course.level = level;
+
+        // Update media fields
+        if (req.body.thumbnail) {
+            console.log(' New Thumbnail from Cloudinary:', req.body.thumbnail);
+            course.thumbnail = req.body.thumbnail;
+        } else if (existingThumbnail) {
+            console.log(' Using existing thumbnail');
+            course.thumbnail = existingThumbnail;
+        }
+
+        if (req.body.videoURL) {
+            console.log(' New Video from Cloudinary:', req.body.videoURL);
+            course.videoURL = req.body.videoURL;
+        } else if (existingVideoURL) {
+            console.log(' Using existing video');
+            course.videoURL = existingVideoURL;
+        }
 
         await course.save();
-        req.flash('success', 'Course updated successfully');
+
+        req.flash('success', 'Course updated successfully!');
         res.redirect(`/courses/${course._id}`);
     } catch (error) {
-        req.flash('error', error.message);
+        console.error(' Course update failed:', error);
+        req.flash('error', 'Failed to update course.');
         res.redirect(`/courses/${req.params.id}/edit`);
     }
 });
+
 
 
 
