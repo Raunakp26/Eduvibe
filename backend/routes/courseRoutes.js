@@ -129,7 +129,7 @@ router.get('/:id/edit', protect, isCourseCreator, async (req, res) => {
 });
 
 // Update course
-router.put('/:id', protect, isCourseCreator, handleFileUpload, processUpload, handleFileDeletion, async (req, res) => {
+router.put('/:id', protect, isCourseCreator, handleFileUpload, processUpload, async (req, res) => {
     try {
         const course = await Course.findById(req.params.id);
         if (!course) {
@@ -144,14 +144,13 @@ router.put('/:id', protect, isCourseCreator, handleFileUpload, processUpload, ha
             }
         });
 
-      if (req.body.thumbnail && req.body.thumbnail !== '') {
-    course.thumbnail = req.body.thumbnail;
-}
+        if (req.body.thumbnail && req.body.thumbnail !== '') {
+            course.thumbnail = req.body.thumbnail;
+        }
 
-if (req.body.videoURL && req.body.videoURL !== '') {
-    course.videoURL = req.body.videoURL;
-}
-
+        if (req.body.videoURL && req.body.videoURL !== '') {
+            course.videoURL = req.body.videoURL;
+        }
 
         await course.save();
         req.flash('success', 'Course updated successfully');
@@ -161,6 +160,7 @@ if (req.body.videoURL && req.body.videoURL !== '') {
         res.redirect(`/courses/${req.params.id}/edit`);
     }
 });
+
 
 
 // View course details
