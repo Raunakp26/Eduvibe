@@ -144,13 +144,9 @@ router.put('/:id', protect, isCourseCreator, handleFileUpload, processUpload, as
             }
         });
 
-        if (req.body.thumbnail && req.body.thumbnail !== '') {
-            course.thumbnail = req.body.thumbnail;
-        }
-
-        if (req.body.videoURL && req.body.videoURL !== '') {
-            course.videoURL = req.body.videoURL;
-        }
+        // Retain old media if not replaced
+        course.thumbnail = req.body.thumbnail || req.body.existingThumbnail || course.thumbnail;
+        course.videoURL = req.body.videoURL || req.body.existingVideoURL || course.videoURL;
 
         await course.save();
         req.flash('success', 'Course updated successfully');
