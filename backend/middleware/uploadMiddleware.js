@@ -2,6 +2,8 @@
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const Course = require('../models/Course');
+
 const cloudinary = require('../utils/cloudinary');
 
 const createUploadDirs = () => {
