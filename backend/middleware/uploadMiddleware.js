@@ -45,14 +45,18 @@ const processUpload = async (req, res, next) => {
     try {
         const { thumbnail, video } = req.files || {};
 
+        // 👇 Check if new thumbnail is uploaded, else keep existing one
         if (thumbnail && thumbnail[0]) {
             const result = await cloudinary.uploader.upload(thumbnail[0].path, {
                 folder: 'thumbnails',
             });
             fs.unlinkSync(thumbnail[0].path);
             req.body.thumbnail = result.secure_url;
+        } else if (req.body.existingThumbnail) {
+            req.body.thumbnail = req.body.existingThumbnail;
         }
 
+        // 👇 Check if new video is uploaded, else keep existing one
         if (video && video[0]) {
             const result = await cloudinary.uploader.upload(video[0].path, {
                 folder: 'videos',
@@ -60,6 +64,8 @@ const processUpload = async (req, res, next) => {
             });
             fs.unlinkSync(video[0].path);
             req.body.videoURL = result.secure_url;
+        } else if (req.body.existingVideoURL) {
+            req.body.videoURL = req.body.existingVideoURL;
         }
 
         next();
