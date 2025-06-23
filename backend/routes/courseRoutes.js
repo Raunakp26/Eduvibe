@@ -131,8 +131,8 @@ router.get('/:id/edit', protect, isCourseCreator, async (req, res) => {
 // Update course
 router.put('/:id', protect, isCourseCreator, handleFileUpload, processUpload, async (req, res) => {
     try {
-        console.log('📝 req.body:', req.body);           // ✅ Show form fields
-        console.log('📂 req.files:', req.files);         // ✅ Show uploaded files info
+    
+        
 
         const course = await Course.findById(req.params.id);
         if (!course) {
