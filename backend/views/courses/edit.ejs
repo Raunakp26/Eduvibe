@@ -9,8 +9,7 @@
                     <h2 class="h4 mb-0">Edit Course</h2>
                 </div>
                 <div class="card-body">
-                   <form action="/courses/<%= course._id %>" method="POST" enctype="multipart/form-data">
-       <input type="hidden" name="_method" value="PUT">
+             <form action="/courses/<%= course._id %>?_method=PUT" method="POST" enctype="multipart/form-data">
 
                         <!-- Basic Information -->
                         <div class="mb-4">
